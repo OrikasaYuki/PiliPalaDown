@@ -2,6 +2,11 @@
 
 [中文版本](CHANGELOG.zh.md)
 
+## [1.1.1] — 2026-05-27
+
+### Fixed
+- QR code not displaying in Electron (missing `qrcode` image generation in IPC handler)
+
 ## [1.1.0] — 2026-05-27
 
 ### Added

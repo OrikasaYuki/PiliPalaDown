@@ -5,6 +5,7 @@ import ja from '../src/i18n/ja.json'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
+import * as QRCode from 'qrcode'
 import { BiliClient } from '../server/bilibili/client'
 import * as biliVideo from '../server/bilibili/video'
 import * as biliAuth from '../server/bilibili/auth'
@@ -116,7 +117,9 @@ function setupHandlers() {
 
   ipcMain.handle('auth:get-qr-info', async () => {
     const client = getClient()
-    return biliAuth.getQRInfo(client)
+    const info = await biliAuth.getQRInfo(client)
+    const image = await QRCode.toDataURL(info.url, { width: 280, margin: 1, color: { dark: '#000', light: '#fff' } })
+    return { image, key: info.qrcode_key }
   })
 
   ipcMain.handle('auth:get-qr-status', async (_event, key: string) => {

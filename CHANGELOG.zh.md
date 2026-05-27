@@ -2,6 +2,11 @@
 
 [English](CHANGELOG.md)
 
+## [1.1.1] — 2026-05-27
+
+### 修复
+- Electron 登录二维码无法显示（IPC handler 中缺少 `qrcode` 图片生成）
+
 ## [1.1.0] — 2026-05-27
 
 ### 新增
