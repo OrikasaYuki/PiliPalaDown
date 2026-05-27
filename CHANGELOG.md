@@ -4,6 +4,8 @@
 
 First public release.
 
+[中文版本](CHANGELOG.zh.md)
+
 ### Added
 - Bilibili video parsing (BV/EP/SS/favorites)
 - DASH stream quality selection (360P–4K) with codec preference
