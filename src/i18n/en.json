@@ -1,0 +1,53 @@
+{
+  "nav": { "home": "Discover", "parse": "Details", "tasks": "Downloads", "settings": "Settings", "login": "Sign In", "logout": "Sign Out" },
+  "home": {
+    "title": "PiliPalaDown", "subtitle": "Paste a video link to parse and download", "popular": "Trending",
+    "refresh": "Refresh", "feed_off": "Feed disabled", "feed_on": "Enable Feed",
+    "input_placeholder": "Video URL / BV ID / EP ID / SS ID", "parse_btn": "Parse", "parsing": "Parsing...",
+    "input_error": "Invalid video URL format"
+  },
+  "parse": {
+    "back": "Back to Home", "select_all": "Select All", "deselect_all": "Deselect All", "parse_selected": "Parse Selected",
+    "batch_download": "Batch Download", "parsing_remaining": "Parsing, {count} remaining",
+    "parse_failed": "{count} videos failed to parse", "selected": "{n}/{total} selected",
+    "quality": "Quality", "online_play": "Play", "play_failed": "Failed to get play URL",
+    "download_type_merge": "Video + Audio", "download_type_audio": "Audio Only", "download_type_video": "Video Only",
+    "start_download": "Download", "cancel": "Cancel", "close": "Close"
+  },
+  "video": {
+    "staff": "Staff", "publisher": "Uploader", "cast": "Cast", "publish_time": "Published",
+    "resolution": "Resolution", "duration": "Duration", "episodes": "Episodes", "status": "Status",
+    "region": "Region", "tags": "Tags", "description": "Description", "no_description": "No description", "main_episodes": "Episodes"
+  },
+  "task": {
+    "title": "Downloads", "empty": "No download tasks", "waiting": "Waiting", "failed": "Failed",
+    "downloading_audio": "Downloading audio", "downloading_video": "Downloading video", "merging": "Merging",
+    "audio": "Audio", "video": "Video", "open_file": "Show in folder", "delete": "Delete", "download": "Download",
+    "player_title_video": "Video Player", "player_title_audio": "Audio Player", "close_player": "Close"
+  },
+  "login": {
+    "title": "QR Code Login", "desc": "Scan with Bilibili App", "qr_refresh": "Refresh QR",
+    "qr_scan_prompt": "Scanned, please confirm on your phone",
+    "qr_error": "Failed to load QR code", "status_error": "Failed to check QR status",
+    "logged_in_as": "Logged in: {name}", "vip": "VIP", "no_vip": "User"
+  },
+  "settings": {
+    "title": "Settings", "download_folder": "Download Folder", "save": "Save", "saved": "Saved",
+    "app": "Application", "debug": "Debug", "log_path": "Log path: {path}", "view_log": "View Log Path",
+    "quit": "Quit", "quit_confirm": "Are you sure you want to quit?", "logout": "Sign Out", "logout_confirm": "Are you sure?",
+    "theme": "Theme", "theme_dark": "Dark", "theme_light": "Light", "theme_high_contrast": "High Contrast",
+    "language": "Language", "feed": "Discover Feed", "feed_on": "On", "feed_off": "Off",
+    "play_quality": "Default Play Quality",
+    "gpu": "GPU Acceleration", "gpu_on": "Enable", "gpu_off": "Disable",
+    "gpu_enabled": "GPU acceleration enabled", "gpu_disabled": "GPU acceleration disabled (default)",
+    "gpu_restart_confirm_on": "Enabling GPU requires restart. Restart now?",
+    "gpu_restart_confirm_off": "Disabling GPU requires restart. Restart now?"
+  },
+  "error": { "title": "Error", "retry": "Retry", "fetch_failed": "Failed to get video info" },
+  "tray": { "show_window": "Show Window", "quit": "Quit" },
+  "common": { "loading": "Loading..." },
+  "format": {
+    "q16": "360P", "q32": "480P", "q64": "720P",
+    "q80": "1080P", "q116": "1080P60", "q120": "4K"
+  }
+}

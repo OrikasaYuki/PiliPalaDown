@@ -1,0 +1,53 @@
+{
+  "nav": { "home": "発見", "parse": "詳細", "tasks": "ダウンロード", "settings": "設定", "login": "ログイン", "logout": "ログアウト" },
+  "home": {
+    "title": "PiliPalaDown", "subtitle": "動画リンクを貼り付けて解析・ダウンロード", "popular": "人気のおすすめ",
+    "refresh": "更新", "feed_off": "フィード停止中", "feed_on": "フィードを表示",
+    "input_placeholder": "動画URL / BV番号 / EP番号 / SS番号", "parse_btn": "解析", "parsing": "解析中...",
+    "input_error": "入力されたURLの形式が正しくありません"
+  },
+  "parse": {
+    "back": "ホームに戻る", "select_all": "すべて選択", "deselect_all": "選択解除", "parse_selected": "選択項目を解析",
+    "batch_download": "一括ダウンロード", "parsing_remaining": "解析中、残り {count} 件",
+    "parse_failed": "以下の {count} 件の解析に失敗しました", "selected": "{n}/{total} 選択中",
+    "quality": "画質", "online_play": "再生", "play_failed": "再生URLの取得に失敗しました",
+    "download_type_merge": "音声+動画", "download_type_audio": "音声のみ", "download_type_video": "動画のみ",
+    "start_download": "ダウンロード開始", "cancel": "キャンセル", "close": "閉じる"
+  },
+  "video": {
+    "staff": "スタッフ", "publisher": "投稿者", "cast": "出演", "publish_time": "公開日",
+    "resolution": "解像度", "duration": "長さ", "episodes": "話数", "status": "状態",
+    "region": "地域", "tags": "タグ", "description": "説明", "no_description": "説明なし", "main_episodes": "本編"
+  },
+  "task": {
+    "title": "ダウンロード", "empty": "ダウンロードタスクはありません", "waiting": "待機中", "failed": "失敗",
+    "downloading_audio": "音声をダウンロード中", "downloading_video": "動画をダウンロード中", "merging": "マージ中",
+    "audio": "音声", "video": "動画", "open_file": "ファイルを開く", "delete": "削除", "download": "ダウンロード",
+    "player_title_video": "動画再生", "player_title_audio": "音声再生", "close_player": "閉じる"
+  },
+  "login": {
+    "title": "QRコードログイン", "desc": "Bilibiliアプリでスキャン", "qr_refresh": "QRコードを更新",
+    "qr_scan_prompt": "スキャン済み、携帯で確認してください",
+    "qr_error": "QRコードの読み込みに失敗しました", "status_error": "QRステータスの確認に失敗しました",
+    "logged_in_as": "ログイン中：{name}", "vip": "会員", "no_vip": "一般ユーザー"
+  },
+  "settings": {
+    "title": "設定", "download_folder": "ダウンロード先", "save": "保存", "saved": "保存しました",
+    "app": "アプリケーション", "debug": "デバッグ", "log_path": "ログパス：{path}", "view_log": "ログパスを表示",
+    "quit": "終了", "quit_confirm": "アプリケーションを終了しますか？", "logout": "ログアウト", "logout_confirm": "ログアウトしますか？",
+    "theme": "テーマ", "theme_dark": "ダーク", "theme_light": "ライト", "theme_high_contrast": "ハイコントラスト",
+    "language": "言語", "feed": "フィード表示", "feed_on": "表示", "feed_off": "非表示",
+    "play_quality": "デフォルト画質",
+    "gpu": "GPU アクセラレーション", "gpu_on": "有効", "gpu_off": "無効",
+    "gpu_enabled": "GPUアクセラレーション有効", "gpu_disabled": "GPUアクセラレーション無効（デフォルト）",
+    "gpu_restart_confirm_on": "GPU有効化には再起動が必要です。今すぐ再起動しますか？",
+    "gpu_restart_confirm_off": "GPU無効化には再起動が必要です。今すぐ再起動しますか？"
+  },
+  "error": { "title": "エラー", "retry": "再試行", "fetch_failed": "動画情報の取得に失敗しました" },
+  "tray": { "show_window": "ウィンドウを表示", "quit": "終了" },
+  "common": { "loading": "読み込み中..." },
+  "format": {
+    "q16": "360P", "q32": "480P", "q64": "720P",
+    "q80": "1080P", "q116": "1080P60", "q120": "4K"
+  }
+}
