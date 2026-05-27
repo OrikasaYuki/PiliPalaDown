@@ -16,85 +16,110 @@
 > including but not limited to account suspension, data loss, or legal disputes.
 > If you believe this project infringes on your rights, please contact us for removal.
 
----
-
-A modern, cross-platform Bilibili video downloader built with Electron and TypeScript. Features a clean minimal design with dark/light/high-contrast themes.
-
 [中文说明](README.zh.md)
+
+A cross-platform Bilibili video downloader built with Electron and TypeScript. Features online playback, multi-P and collection download, quality selection, and multi-language UI.
 
 ## Features
 
-- **Online Playback** — Stream videos directly in-app with quality selection
-- **Video Parsing** — Parse videos by BV, EP, SS, or favorites list
-- **Multi-P / Collection Support** — Batch select and download multi-part videos and collections
-- **Quality Selection** — Choose resolution from 360P to 4K
-- **Codec Selection** — HEVC / AVC / AV1
-- **Download Management** — Track progress, pause/delete tasks
+- **Online Playback** — Stream videos directly in-app with quality switching
+- **Video Parsing** — Parse by BV, EP, SS, or favorites list
+- **Multi-P & Collection** — Batch select and download multi-part videos and collections
+- **Quality Selection** — 360P to 4K, with HEVC / AVC / AV1 codec preference
+- **Download Management** — Real-time progress with speed, size, and phase info
 - **Built-in Player** — Video and audio playback
 - **QR Code Login** — Login with Bilibili App
 - **Multi-language** — 中文 · English · 日本語
-- **Theme Support** — Dark (default dark gray), Light, High Contrast (pure black)
+- **Theme System** — Dark (default), Light, High Contrast
 
-## Quick Start
+## Download
 
-### Development
+Get the latest release from the [Releases page](https://github.com/OrikasaYuki/PiliPalaDown/releases).
+
+| Package | Description |
+|---------|-------------|
+| `PiliPalaDown Setup x.x.x.exe` | Windows installer (recommended) |
+| `PiliPalaDown x.x.x.exe` | Portable version (no install needed) |
+| Source code | Zip / tar.gz archives |
+
+**System Requirements**: Windows 10+, 64-bit. FFmpeg is bundled.
+
+## Screenshots
+
+*(Coming soon)*
+
+## Development
 
 ```bash
+# Clone
+git clone https://github.com/OrikasaYuki/PiliPalaDown.git
+cd PiliPalaDown
+
+# Install dependencies
 npm install
+
+# Start in development mode (Electron)
 npm run electron:dev
+
+# Or run in browser (Express dev server)
+npm run web:dev
 ```
 
 ### Build
 
 ```bash
-# Desktop (Electron)
+# Build desktop installer
 npm run electron:build
 
-# Web browser mode
-npm run web:dev
-
-# Web build
+# Build for web
 npm run web:build
 ```
 
-## Requirements
-
-- Node.js 20+
-- npm
-- FFmpeg (bundled with the app for Windows builds)
-
-## Tech Stack
-
-- **Frontend**: React 18 + Zustand + pure CSS
-- **Backend**: TypeScript + Node.js (Electron main process / Express)
-- **Desktop**: Electron + electron-builder
-- **Build**: Vite + vite-plugin-electron
-- **Storage**: JSON file-based (no native dependencies)
+Outputs are placed in `release/` (Electron) or `dist-web/` (web).
 
 ## Project Structure
 
 ```
-src/
-├── components/       # React UI components
-├── stores/           # Zustand state management
-├── adapters/         # Platform adapters (Electron/Web/Android)
-├── api/              # Client-side API helpers
-└── i18n/             # Locale files (zh/en/ja)
-
-electron/
-├── main.ts           # Electron main process (IPC handlers, tray, GPU)
-└── preload.ts        # Context bridge (electronAPI)
-
-server/
-├── bilibili/         # Bilibili API client (video, auth, WBI sign)
-├── task/             # Download manager
-├── util/             # Storage, FFmpeg wrapper
-└── index.ts          # Express server (web mode)
-
-scripts/
-└── generate-icon.js  # App icon generator
+src/            React UI components, stores, i18n
+electron/       Electron main process & preload
+server/         Bilibili API client, download manager, storage, FFmpeg
+public/         App icons (SVG/PNG/ICO)
+scripts/        Build utilities
 ```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Zustand, pure CSS |
+| Backend | TypeScript, Node.js |
+| Desktop | Electron, electron-builder |
+| Build | Vite, vite-plugin-electron |
+| Storage | JSON file (no native deps) |
+| Media | FFmpeg |
+
+## Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. **Report bugs** — Open an [issue](https://github.com/OrikasaYuki/PiliPalaDown/issues) with detailed steps to reproduce
+2. **Suggest features** — Open an issue with the `enhancement` label
+3. **Submit code** — Fork the repo, create a feature branch, and open a pull request
+
+Please ensure your code passes TypeScript checking before submitting:
+```bash
+npx tsc --noEmit
+```
+
+## Issues
+
+Before opening an issue, please:
+
+- Check the [existing issues](https://github.com/OrikasaYuki/PiliPalaDown/issues) for duplicates
+- Include your platform (Windows version, etc.)
+- Provide logs from `%USERPROFILE%\.pilipaladown\app.log`
+- Describe steps to reproduce clearly
 
 ## License
 
-MIT
+[MIT](LICENSE)
