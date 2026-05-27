@@ -37,7 +37,7 @@
     "quit": "Quit", "quit_confirm": "Are you sure you want to quit?", "logout": "Sign Out", "logout_confirm": "Are you sure?",
     "theme": "Theme", "theme_dark": "Dark", "theme_light": "Light", "theme_high_contrast": "High Contrast",
     "language": "Language", "feed": "Discover Feed", "feed_on": "On", "feed_off": "Off",
-    "play_quality": "Default Play Quality",
+    "play_quality": "Default Download Quality",
     "gpu": "GPU Acceleration", "gpu_on": "Enable", "gpu_off": "Disable",
     "gpu_enabled": "GPU acceleration enabled", "gpu_disabled": "GPU acceleration disabled (default)",
     "gpu_restart_confirm_on": "Enabling GPU requires restart. Restart now?",
@@ -48,6 +48,6 @@
   "common": { "loading": "Loading..." },
   "format": {
     "q16": "360P", "q32": "480P", "q64": "720P",
-    "q80": "1080P", "q116": "1080P60", "q120": "4K"
+    "q80": "1080P", "q112": "1080P+", "q116": "1080P60", "q120": "4K", "q125": "HDR", "q126": "Dolby Vision", "q127": "8K"
   }
 }

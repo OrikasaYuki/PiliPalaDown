@@ -57,11 +57,19 @@ interface WorkState {
   selectAllSectionPages: (sectionIndex: number, val: boolean) => void
 }
 
+export interface AudioOption {
+  url: string
+  label: string
+  codec?: string
+}
+
 export interface PlayInfoItem {
   page: PageParseResult
   info: PlayInfo | null
   selected: boolean
   formatIndex: number
+  audioIndex: number
+  audioOptions: AudioOption[]
 }
 
 const initialVideoData: VideoParseResult = {

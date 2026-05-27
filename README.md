@@ -18,19 +18,21 @@
 
 [中文说明](README.zh.md)
 
-A cross-platform Bilibili video downloader built with Electron and TypeScript. Features online playback, multi-P and collection download, quality selection, and multi-language UI.
+A cross-platform Bilibili video downloader built with Electron and TypeScript.
 
 ## Features
 
-- **Online Playback** — Stream videos directly in-app with quality switching
+- **Online Playback** — Watch videos directly in-app via Bilibili's official iframe player
 - **Video Parsing** — Parse by BV, EP, SS, or favorites list
 - **Multi-P & Collection** — Batch select and download multi-part videos and collections
-- **Quality Selection** — 360P to 4K, with HEVC / AVC / AV1 codec preference
-- **Download Management** — Real-time progress with speed, size, and phase info
-- **Built-in Player** — Video and audio playback
+- **Quality Selection** — 360P to 8K, with HEVC / AVC / AV1 codec preference
+- **Audio Selection** — Per-item audio format picker (AAC / FLAC Hi-Res / Dolby Atmos)
+- **Download Management** — Real-time progress with speed, size, and phase
 - **QR Code Login** — Login with Bilibili App
 - **Multi-language** — 中文 · English · 日本語
-- **Theme System** — Dark (default), Light, High Contrast
+- **Theme System** — Dark (default dark gray), Light, High Contrast (pure black)
+- **GPU Toggle** — Enable/disable GPU acceleration with crash auto-recovery
+- **System Tray** — Minimize-to-tray with context menu
 
 ## Download
 
@@ -40,49 +42,26 @@ Get the latest release from the [Releases page](https://github.com/OrikasaYuki/P
 |---------|-------------|
 | `PiliPalaDown Setup x.x.x.exe` | Windows installer (recommended) |
 | `PiliPalaDown x.x.x.exe` | Portable version (no install needed) |
-| Source code | Zip / tar.gz archives |
 
-**System Requirements**: Windows 10+, 64-bit. FFmpeg is bundled.
+**System Requirements**: Windows 10+, 64-bit. FFmpeg bundled.
 
-## Screenshots
-
-*(Coming soon)*
-
-## Development
+## Quick Start
 
 ```bash
-# Clone
 git clone https://github.com/OrikasaYuki/PiliPalaDown.git
 cd PiliPalaDown
-
-# Install dependencies
 npm install
-
-# Start in development mode (Electron)
-npm run electron:dev
-
-# Or run in browser (Express dev server)
-npm run web:dev
+npm run electron:dev    # Development mode (Electron)
+npm run web:dev         # Development mode (Browser)
+npm run electron:build  # Build desktop installer
 ```
-
-### Build
-
-```bash
-# Build desktop installer
-npm run electron:build
-
-# Build for web
-npm run web:build
-```
-
-Outputs are placed in `release/` (Electron) or `dist-web/` (web).
 
 ## Project Structure
 
 ```
-src/            React UI components, stores, i18n
+src/            React UI, stores, i18n
 electron/       Electron main process & preload
-server/         Bilibili API client, download manager, storage, FFmpeg
+server/         Bilibili API, download manager, FFmpeg, storage
 public/         App icons (SVG/PNG/ICO)
 scripts/        Build utilities
 ```
@@ -100,25 +79,9 @@ scripts/        Build utilities
 
 ## Contributing
 
-Contributions are welcome! Here's how you can help:
-
-1. **Report bugs** — Open an [issue](https://github.com/OrikasaYuki/PiliPalaDown/issues) with detailed steps to reproduce
-2. **Suggest features** — Open an issue with the `enhancement` label
-3. **Submit code** — Fork the repo, create a feature branch, and open a pull request
-
-Please ensure your code passes TypeScript checking before submitting:
-```bash
-npx tsc --noEmit
-```
-
-## Issues
-
-Before opening an issue, please:
-
-- Check the [existing issues](https://github.com/OrikasaYuki/PiliPalaDown/issues) for duplicates
-- Include your platform (Windows version, etc.)
-- Provide logs from `%USERPROFILE%\.pilipaladown\app.log`
-- Describe steps to reproduce clearly
+1. Report bugs via [issues](https://github.com/OrikasaYuki/PiliPalaDown/issues)
+2. Submit PRs from feature branches
+3. Ensure `npx tsc --noEmit` passes before submitting
 
 ## License
 

@@ -10,19 +10,21 @@
 
 [English](README.md)
 
-一个基于 Electron 和 TypeScript 的跨平台 Bilibili 视频下载工具。支持在线播放、多P与合集下载、画质选择、多语言界面。
+一个基于 Electron 和 TypeScript 的跨平台 Bilibili 视频下载工具。
 
 ## 功能
 
-- **在线播放** — 应用内直接播放，支持画质切换
+- **在线播放** — 通过 Bilibili 官方 iframe 播放器直接观看
 - **视频解析** — 支持 BV 号、EP 号、SS 号、收藏夹解析
 - **多P与合集** — 批量选择和下载多P视频与合集
-- **画质选择** — 360P 到 4K，支持 HEVC / AVC / AV1 编码
-- **下载管理** — 实时进度显示（速度、大小、阶段）
-- **内置播放器** — 视频和音频播放
+- **画质选择** — 360P 到 8K，HEVC / AVC / AV1 编码偏好
+- **音频选择** — 每项独立音频格式选择（AAC / FLAC Hi-Res / Dolby Atmos）
+- **下载管理** — 实时进度（速度、大小、阶段）
 - **扫码登录** — 使用哔哩哔哩 APP 扫码
 - **多语言** — 中文 · English · 日本語
 - **主题系统** — 深色（默认）、浅色、高对比
+- **GPU 开关** — 启用/禁用 GPU 加速，崩溃自动恢复
+- **系统托盘** — 最小化到托盘，右键菜单
 
 ## 下载
 
@@ -32,36 +34,26 @@
 |------|------|
 | `PiliPalaDown Setup x.x.x.exe` | Windows 安装包（推荐） |
 | `PiliPalaDown x.x.x.exe` | 便携版（免安装） |
-| Source code | 源代码压缩包 |
 
 **系统要求**：Windows 10+，64位。已内置 FFmpeg。
 
-## 开发
+## 快速开始
 
 ```bash
 git clone https://github.com/OrikasaYuki/PiliPalaDown.git
 cd PiliPalaDown
 npm install
-npm run electron:dev    # Electron 开发模式
-npm run web:dev          # 浏览器开发模式
+npm run electron:dev      # 开发模式（Electron）
+npm run electron:build    # 构建桌面安装包
 ```
-
-### 构建
-
-```bash
-npm run electron:build  # 构建桌面安装包
-npm run web:build       # 构建 Web 版
-```
-
-构建产物在 `release/`（桌面版）或 `dist-web/`（Web 版）。
 
 ## 项目结构
 
 ```
 src/            React 组件、状态管理、国际化
 electron/       Electron 主进程 & preload
-server/         Bilibili API 客户端、下载管理、存储、FFmpeg
-public/         应用图标 (SVG/PNG/ICO)
+server/         Bilibili API、下载管理、FFmpeg、存储
+public/         应用图标
 scripts/        构建工具
 ```
 
@@ -78,25 +70,7 @@ scripts/        构建工具
 
 ## 贡献
 
-欢迎贡献代码！你可以通过以下方式帮助项目：
-
-1. **报告 Bug** — 提交 [issue](https://github.com/OrikasaYuki/PiliPalaDown/issues)，描述复现步骤
-2. **建议功能** — 提交 issue，标记 `enhancement`
-3. **提交代码** — Fork 仓库，创建特性分支，提交 Pull Request
-
-提交前请确保 TypeScript 检查通过：
-```bash
-npx tsc --noEmit
-```
-
-## Issues
-
-提交 issue 前请：
-
-- 检查[已有 issues](https://github.com/OrikasaYuki/PiliPalaDown/issues) 避免重复
-- 提供操作系统版本
-- 提供日志文件 `%USERPROFILE%\.pilipaladown\app.log`
-- 清晰描述复现步骤
+欢迎通过 [issues](https://github.com/OrikasaYuki/PiliPalaDown/issues) 报告问题或提交 PR。
 
 ## 许可
 

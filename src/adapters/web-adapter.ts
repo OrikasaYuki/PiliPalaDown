@@ -65,12 +65,14 @@ export function createWebApi(): ElectronAPI {
     setTrayLocale: async () => {},
     onMenuAction: () => { const f = () => {}; return f },
 
+    log: async (msg) => { console.log('[renderer]', msg) },
+
     // Online playback
     getPlayUrl: (bvid: string, cid: number) =>
       apiGet<{ videoUrl: string; audioUrl: string; qualities: { id: number; url: string; label: string }[] }>(
         `/api/getPlayUrl?bvid=${bvid}&cid=${cid}`
       ),
-    getStreamUrl: async (videoUrl: string, _audioUrl: string) => videoUrl, // Web mode: just return video URL
+    getStreamUrl: async (videoUrl: string, audioUrl: string) => ({ videoProxyUrl: videoUrl, audioProxyUrl: audioUrl }),
 
     // Settings
     getFields: () => apiGet<SettingsFields>('/api/getFields'),

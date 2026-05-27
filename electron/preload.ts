@@ -29,6 +29,9 @@ const electronAPI = {
   getStreamUrl: (videoUrl: string, audioUrl: string) =>
     ipcRenderer.invoke('video:get-stream-url', videoUrl, audioUrl),
 
+  // Logging
+  log: (msg: string) => ipcRenderer.invoke('log:write', msg),
+
   // Tray locale sync
   setTrayLocale: (locale: string) => ipcRenderer.invoke('tray:set-locale', locale),
   onMenuAction: (callback: (action: string) => void) => {

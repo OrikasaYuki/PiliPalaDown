@@ -241,13 +241,15 @@ export interface ElectronAPI {
   getRedirectedLocation(url: string): Promise<string>
   getSeasonsArchivesListFirstBvid(mid: number, seasonId: number): Promise<string>
 
+  log(msg: string): Promise<void>
+
   // Tray
   setTrayLocale(locale: string): Promise<void>
   onMenuAction(callback: (action: string) => void): () => void
 
   // Online playback
   getPlayUrl(bvid: string, cid: number): Promise<{ videoUrl: string; audioUrl: string; qualities: { id: number; url: string; label: string }[] }>
-  getStreamUrl(videoUrl: string, audioUrl: string): Promise<string>
+  getStreamUrl(videoUrl: string, audioUrl: string): Promise<{ videoProxyUrl: string; audioProxyUrl: string }>
 
   // Task
   createTask(tasks: TaskInitData[]): Promise<void>

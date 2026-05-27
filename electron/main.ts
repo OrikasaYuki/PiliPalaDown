@@ -10,6 +10,7 @@ import * as biliVideo from '../server/bilibili/video'
 import * as biliAuth from '../server/bilibili/auth'
 import { createTasks, getActiveTasks, deleteTask as deleteManagedTask, checkFFmpeg } from '../server/task/manager'
 import { getFields, saveFields as dbSaveFields, getTaskList, getSessdata } from '../server/util/db'
+import { log as fileLog } from '../server/util/logger'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -243,6 +244,9 @@ function setupHandlers() {
     return { success: true, needsRestart: true }
   })
 
+  // Logging (from renderer)
+  ipcMain.handle('log:write', async (_event, msg: string) => { fileLog(msg) })
+
   // App
   ipcMain.handle('app:quit', async () => {
     app.quit()
@@ -259,6 +263,7 @@ function setupHandlers() {
 
   // Video: get playable DASH URL with all available qualities for online streaming
   ipcMain.handle('video:get-play-url', async (_event, bvid: string, cid: number) => {
+    fileLog(`[play] getPlayUrl bvid=${bvid} cid=${cid}`)
     const client = getClient()
     const playInfo = await biliVideo.getPlayInfo(client, bvid, cid)
     if (!playInfo.dash.video.length) throw new Error('No video stream available')
@@ -295,10 +300,12 @@ function setupHandlers() {
       audioUrl = playInfo.dash.audio.sort((a: any, b: any) => b.id - a.id)[0].baseUrl
     }
 
+    fileLog(`[play] qualities: ${qualities.map(q => `${q.id}`).join(', ')} audioUrl: ${audioUrl ? 'yes' : 'no'}`)
+    fileLog(`[play] best videoUrl: ${qualities[0]?.url?.slice(0, 80)}...`)
     return { videoUrl: qualities[0]?.url || '', audioUrl, qualities }
   })
 
-  // Video: get stream URL (in Electron, return direct video URL)
+  // Video: get stream URL (simple pass-through, no platform-specific deps)
   ipcMain.handle('video:get-stream-url', async (_event, videoUrl: string, _audioUrl: string) => {
     return videoUrl
   })

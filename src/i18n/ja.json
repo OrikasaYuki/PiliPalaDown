@@ -37,7 +37,7 @@
     "quit": "終了", "quit_confirm": "アプリケーションを終了しますか？", "logout": "ログアウト", "logout_confirm": "ログアウトしますか？",
     "theme": "テーマ", "theme_dark": "ダーク", "theme_light": "ライト", "theme_high_contrast": "ハイコントラスト",
     "language": "言語", "feed": "フィード表示", "feed_on": "表示", "feed_off": "非表示",
-    "play_quality": "デフォルト画質",
+    "play_quality": "デフォルトダウンロード画質",
     "gpu": "GPU アクセラレーション", "gpu_on": "有効", "gpu_off": "無効",
     "gpu_enabled": "GPUアクセラレーション有効", "gpu_disabled": "GPUアクセラレーション無効（デフォルト）",
     "gpu_restart_confirm_on": "GPU有効化には再起動が必要です。今すぐ再起動しますか？",
@@ -48,6 +48,6 @@
   "common": { "loading": "読み込み中..." },
   "format": {
     "q16": "360P", "q32": "480P", "q64": "720P",
-    "q80": "1080P", "q116": "1080P60", "q120": "4K"
+    "q80": "1080P", "q112": "1080P+", "q116": "1080P60", "q120": "4K", "q125": "HDR", "q126": "ドルビービジョン", "q127": "8K"
   }
 }

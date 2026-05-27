@@ -4,7 +4,7 @@ dist-web/
 dist-electron/
 dist-server/
 release/
-android/
+/android/
 .capacitor/
 *.db
 .env

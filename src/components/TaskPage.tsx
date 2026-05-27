@@ -29,24 +29,16 @@ export const TaskPage: React.FC<TaskPageProps> = ({ onError }) => {
 
   useEffect(() => {
     return () => {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
-      if (dbTimerRef.current) clearInterval(dbTimerRef.current)
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
     }
   }, [])
 
-  const progressTimerRef = useRef<ReturnType<typeof setInterval>>()
-  const dbTimerRef = useRef<ReturnType<typeof setInterval>>()
+  const pollTimerRef = useRef<ReturnType<typeof setInterval>>()
 
   const startProgressPolling = () => {
-    // Lightweight in-memory progress: every 1s
-    progressTimerRef.current = setInterval(async () => {
+    pollTimerRef.current = setInterval(async () => {
       await refreshActive()
     }, 1000)
-
-    // Heavy JSON DB read: every 5s (catches done/error state changes)
-    dbTimerRef.current = setInterval(async () => {
-      await refreshTasks()
-    }, 5000)
   }
 
   const handleShowFile = async (task: TaskItem) => {

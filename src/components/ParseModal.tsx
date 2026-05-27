@@ -104,6 +104,24 @@ export const ParseModal: React.FC<ParseModalProps> = ({ open, onClose, onDownloa
                           </option>
                         ))}
                       </select>
+                      {info.audioOptions && info.audioOptions.length > 1 && (
+                        <select
+                          className="quality-select"
+                          style={{ maxWidth: 130 }}
+                          value={info.audioIndex}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => {
+                            const idx = parseInt(e.target.value)
+                            const updated = [...allPlayInfo]
+                            updated[index] = { ...updated[index], audioIndex: idx }
+                            useWorkStore.getState().setAllPlayInfo(updated)
+                          }}
+                        >
+                          {info.audioOptions.map((opt: any, i: number) => (
+                            <option key={i} value={i}>{opt.label}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   )
                 })}
@@ -133,14 +151,6 @@ export const ParseModal: React.FC<ParseModalProps> = ({ open, onClose, onDownloa
                 <option value={7}>AVC</option>
                 <option value={13}>AV1</option>
               </select>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={preferHiResAudio}
-                  onChange={e => setPreferHiResAudio(e.target.checked)}
-                />
-                <span>Hi-Res</span>
-              </label>
             </div>
           )}
 

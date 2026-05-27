@@ -33,9 +33,7 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
   const [parsing, setParsing] = useState(false)
   const abortControllers = useRef<AbortController[]>([])
   const [playerOpen, setPlayerOpen] = useState(false)
-  const [playerSrc, setPlayerSrc] = useState('')
   const [playerTitle, setPlayerTitle] = useState('')
-  const [playerQualities, setPlayerQualities] = useState<{ id: number; url: string; label: string }[]>([])
   const [loading, setLoading] = useState(false)
 
   // Resolve video when parseTarget changes
@@ -108,7 +106,37 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
           abortControllers.current.push(controller)
           const playInfo = await window.electronAPI.getPlayInfo(page.bvid, page.cid)
           playInfo.accept_quality = [...new Set(playInfo.dash.video.map((v: any) => v.id))].sort((a: any, b: any) => b - a)
-          items.push({ page, info: playInfo, selected: true, formatIndex: 0 })
+          // Pick default quality from settings — prefer exact match, then nearest lower
+          const defaultQ = useSettingsStore.getState().defaultPlayQuality
+          let qIdx = 0
+          const quals = playInfo.accept_quality
+          // 1) Exact match
+          const exact = quals.indexOf(defaultQ)
+          if (exact >= 0) { qIdx = exact }
+          else {
+            // 2) Nearest lower quality
+            let best = -1
+            for (let i = 0; i < quals.length; i++) {
+              if (quals[i] < defaultQ && (best < 0 || quals[i] > quals[best])) best = i
+            }
+            qIdx = best >= 0 ? best : 0 // 3) Fallback to highest
+          }
+          // Build audio options list
+          const audioOptions: { url: string; label: string }[] = []
+          if (playInfo.dash.flac?.audio?.baseUrl) audioOptions.push({ url: playInfo.dash.flac.audio.baseUrl, label: 'FLAC Hi-Res' })
+          if (playInfo.dash.audio) {
+            playInfo.dash.audio.forEach((a: any) => {
+              const codecLabel = a.codecs?.includes('ec-3') ? 'Dolby Atmos' : a.codecs?.includes('mp4a') ? 'AAC' : `Audio ${a.id}`
+              audioOptions.push({ url: a.baseUrl, label: `${codecLabel} (${(a.bandwidth / 1000).toFixed(0)}kbps)` })
+            })
+          }
+          // Pick default audio: Hi-Res first, then Atmos, then highest bandwidth
+          let aIdx = 0
+          for (let i = 0; i < audioOptions.length; i++) {
+            if (i === 0 && audioOptions[i].label.startsWith('FLAC')) { aIdx = i; break }
+            if (audioOptions[i].label.includes('Atmos')) { aIdx = i; break }
+          }
+          items.push({ page, info: playInfo, selected: true, formatIndex: qIdx, audioIndex: aIdx, audioOptions })
         } catch (err: any) {
           const badgeNotNum = !page.badge.match(/^\d+$/)
           errors.push(`${page.part}${badgeNotNum ? ` - ${page.badge}` : ''}`)
@@ -139,7 +167,7 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
 
       const fmt = info.info!.accept_quality[info.formatIndex]
       const activeVideo = getActiveVideo(info.info!, fmt, preferredCodec)
-      const audioURL = getAudioURL(info.info!, preferHiResAudio)
+      const audioURL = info.audioOptions[info.audioIndex]?.url || getAudioURL(info.info!, preferHiResAudio)
 
       const titleParts = badgeNotNum
         ? [
@@ -182,38 +210,16 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
     }
   }
 
-  const [playerAudioSrc, setPlayerAudioSrc] = React.useState('')
+  const [playBvid, setPlayBvid] = React.useState('')
+  const [playCid, setPlayCid] = React.useState(0)
+  const [playPage, setPlayPage] = React.useState(0)
 
-  const handlePlayEpisode = async (page: any) => {
-    try {
-      const playInfo = await window.electronAPI.getPlayUrl(page.bvid, page.cid)
-      const qualities = playInfo.qualities || []
-      const defaultQ = useSettingsStore.getState().defaultPlayQuality
-      let selectedIdx = 0
-      if (qualities.length > 1) {
-        let best = qualities[0]
-        for (const q of qualities) {
-          if (q.id === defaultQ) { best = q; break }
-          if (q.id > defaultQ && (best.id < defaultQ || q.id < best.id)) best = q
-        }
-        if (defaultQ > qualities[qualities.length - 1].id) best = qualities[qualities.length - 1]
-        selectedIdx = qualities.indexOf(best)
-      }
-      const selectedQuality = qualities[selectedIdx]
-      if (!selectedQuality) throw new Error('No suitable quality')
-
-      setPlayerSrc(selectedQuality.url)
-      setPlayerAudioSrc(playInfo.audioUrl || '')
-      setPlayerTitle(page.part || videoData.title)
-      setPlayerQualities(qualities)
-      setPlayerOpen(true)
-    } catch (err: any) {
-      alert(t('parse.play_failed') + ': ' + err.message)
-    }
-  }
-
-  const handlePlayerQualityChange = (url: string) => {
-    setPlayerSrc(url)
+  const handlePlayEpisode = async (pageItem: any) => {
+    setPlayBvid(pageItem.bvid)
+    setPlayCid(pageItem.cid)
+    setPlayPage(pageItem.page || 0)
+    setPlayerTitle(pageItem.part || videoData.title)
+    setPlayerOpen(true)
   }
 
   const getSections = () => {
@@ -280,17 +286,16 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
         open={playerOpen}
         onClose={() => {
           setPlayerOpen(false)
-          setPlayerSrc('')
-          setPlayerAudioSrc('')
-          setPlayerQualities([])
+          setPlayBvid('')
+          setPlayCid(0)
         }}
-        src={playerSrc}
-        audioSrc={playerAudioSrc}
+        src=""
         title={playerTitle}
         type="video"
         isOnline
-        qualities={playerQualities}
-        onQualityChange={handlePlayerQualityChange}
+        bvid={playBvid}
+        cid={playCid}
+        page={playPage}
       />
     </div>
   )
@@ -309,8 +314,16 @@ function getActiveVideo(playInfo: any, format: VideoFormat, preferredCodec: 12 |
 }
 
 function getAudioURL(playInfo: any, preferHiRes: boolean = true): string {
-  if (preferHiRes && playInfo.dash.flac) {
+  // 1) Hi-Res FLAC if preferred and available
+  if (preferHiRes && playInfo.dash.flac?.audio?.baseUrl) {
     return playInfo.dash.flac.audio.baseUrl
   }
-  return playInfo.dash.audio.sort((a: any, b: any) => b.id - a.id)[0]?.baseUrl || ''
+  // 2) Dolby Atmos / E-AC-3 (common with Dolby Vision video)
+  const atmos = playInfo.dash.audio?.find((a: any) =>
+    a.codecs?.toLowerCase().includes('ec-3') || a.codecs?.toLowerCase().includes('dolby')
+  )
+  if (atmos) return atmos.baseUrl
+  // 3) Highest quality AAC
+  const sorted = [...(playInfo.dash.audio || [])].sort((a: any, b: any) => b.id - a.id)
+  return sorted[0]?.baseUrl || ''
 }

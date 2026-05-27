@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { VideoFormat, VideoFormatLabels } from '../types'
 
 export const QUALITY_OPTIONS: { id: number }[] = [
-  { id: 16 }, { id: 32 }, { id: 64 }, { id: 80 }, { id: 116 }, { id: 120 },
+  { id: 16 }, { id: 32 }, { id: 64 }, { id: 80 }, { id: 112 }, { id: 116 }, { id: 120 }, { id: 125 }, { id: 126 }, { id: 127 },
 ]
 
 interface SettingsState {

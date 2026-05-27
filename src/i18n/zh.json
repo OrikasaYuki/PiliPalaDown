@@ -36,7 +36,7 @@
     "quit": "关闭软件", "quit_confirm": "确定要关闭软件吗？", "logout": "退出登录", "logout_confirm": "确定要退出登录吗？",
     "theme": "主题", "theme_dark": "深色", "theme_light": "浅色", "theme_high_contrast": "高对比",
     "language": "语言", "feed": "发现页信息流", "feed_on": "开启", "feed_off": "关闭",
-    "play_quality": "默认在线播放画质",
+    "play_quality": "默认下载画质",
     "gpu": "GPU 加速", "gpu_on": "启用", "gpu_off": "禁用",
     "gpu_enabled": "GPU加速已启用", "gpu_disabled": "GPU加速已禁用（默认）",
     "gpu_restart_confirm_on": "GPU加速开启后需要重启应用。是否立即重启？",
@@ -47,6 +47,6 @@
   "common": { "loading": "正在加载..." },
   "format": {
     "q16": "360P 流畅", "q32": "480P 清晰", "q64": "720P 高清",
-    "q80": "1080P 高清", "q116": "1080P60 高帧率", "q120": "4K 超清"
+    "q80": "1080P 高清", "q112": "1080P+ 高码率", "q116": "1080P60 高帧率", "q120": "4K 超清", "q125": "HDR 真彩色", "q126": "杜比视界", "q127": "8K 超高清"
   }
 }
