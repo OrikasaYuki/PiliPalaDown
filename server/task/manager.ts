@@ -5,46 +5,11 @@ import { createTaskRecord, updateTaskStatus, getCurrentFolder, getSessdata, dele
 import { mergeMedia, addMetadata as addFFmpegMetadata, checkFFmpeg } from '../util/ffmpeg'
 import { log, logError } from '../util/logger'
 import PQueue from 'p-queue'
-
-export interface TaskOptions {
-  bvid: string
-  cid: number
-  format: number
-  title: string
-  owner: string
-  cover: string
-  audio: string
-  video: string
-  width: number
-  height: number
-  duration: number
-  downloadType: 'audio' | 'video' | 'merge'
-}
-
-export interface ActiveTaskInfo {
-  id: number
-  bvid: string
-  cid: number
-  format: number
-  title: string
-  owner: string
-  cover: string
-  status: string
-  folder: string
-  audioProgress: number
-  videoProgress: number
-  mergeProgress: number
-  duration: number
-  // Detailed progress
-  phase: 'downloading_audio' | 'downloading_video' | 'merging' | 'done' | ''
-  totalBytes: number
-  downloadedBytes: number
-  speedBytesPerSec: number
-}
+import type { TaskInitData, ActiveTask as ActiveTaskInfo } from '../../shared/download/types'
 
 interface ManagedTask {
   info: ActiveTaskInfo
-  options: TaskOptions
+  options: TaskInitData
   cancel?: () => void
 }
 
@@ -52,7 +17,7 @@ const downloadQueue = new PQueue({ concurrency: 3 })
 const mergeQueue = new PQueue({ concurrency: 3 })
 const tasks = new Map<number, ManagedTask>()
 
-export function createTasks(options: TaskOptions[]): number[] {
+export function createTasks(options: TaskInitData[]): number[] {
   const folder = getCurrentFolder()
   const ids: number[] = []
 

@@ -2,29 +2,56 @@
  * Android download manager.
  * Uses fetch() for download + @ffmpeg/ffmpeg WASM for merge + Capacitor FS for save.
  */
+import { CapacitorHttp } from '@capacitor/core'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile } from '@ffmpeg/util'
+import PQueue from 'p-queue'
 import * as Storage from './storage'
+import NativeDownload from './nativedownload'
 import type { DownloadTask } from '../../../shared/download/types'
+
+const downloadQueue = new PQueue({ concurrency: 2 })
+const mergeQueue = new PQueue({ concurrency: 1 })
 
 let _taskIdCounter = Date.now()
 const _activeTasks = new Map<number, DownloadTask>()
+let _sessdata = ''
+
+/** Set SESSDATA for authenticating DASH stream downloads */
+export function setSessdata(sd: string) {
+  _sessdata = sd
+}
+
+/** Ensure the working directory exists */
+async function ensureDir() {
+  try {
+    await Filesystem.mkdir({ path: 'PiliPalaDown', directory: Directory.Data, recursive: true })
+  } catch {
+    // Directory may already exist
+  }
+}
 
 export async function createTasks(tasks: any[]): Promise<number[]> {
+  await ensureDir()
   const ids: number[] = []
   for (const t of tasks) {
     const id = await Storage.createTask(t)
     ids.push(id)
     const task: DownloadTask = {
-      id, ...t,
+      id,
+      bvid: t.bvid, cid: t.cid, format: t.format,
+      title: t.title, owner: t.owner, cover: t.cover,
+      audioUrl: t.audio, videoUrl: t.video,
+      width: t.width, height: t.height, duration: t.duration,
+      downloadType: t.downloadType,
       status: 'waiting', folder: 'PiliPalaDown',
       audioProgress: 0, videoProgress: 0, mergeProgress: 0,
       totalBytes: 0, downloadedBytes: 0, speedBytesPerSec: 0, phase: '',
       createAt: new Date().toLocaleString(),
     }
     _activeTasks.set(id, task)
-    processTask(task) // fire-and-forget
+    downloadQueue.add(() => processTask(task))
   }
   return ids
 }
@@ -32,36 +59,59 @@ export async function createTasks(tasks: any[]): Promise<number[]> {
 async function processTask(task: DownloadTask) {
   try {
     task.status = 'running'
-    task.phase = 'downloading_audio'
     await Storage.updateTaskStatus(task.id, 'running')
 
-    const audioFile = await downloadFile(task.audioUrl, `${task.id}.m4a`, (b, t, s) => {
-      task.audioProgress = t > 0 ? b / t : 0; task.totalBytes = t; task.downloadedBytes = b; task.speedBytesPerSec = s
-    })
+    let audioFile: string | null = null
+    let videoFile: string | null = null
 
-    task.phase = 'downloading_video'
-    const videoFile = await downloadFile(task.videoUrl, `${task.id}.mp4`, (b, t, s) => {
-      task.videoProgress = t > 0 ? b / t : 0; task.totalBytes = t; task.downloadedBytes = b; task.speedBytesPerSec = s
-    })
+    // Only download what's needed for the selected mode
+    if (task.downloadType === 'audio') {
+      task.phase = 'downloading_audio'
+      audioFile = await downloadFile(task.audioUrl, `${task.id}.m4a`, (b, t, s) => {
+        task.audioProgress = t > 0 ? b / t : 0; task.totalBytes = t; task.downloadedBytes = b; task.speedBytesPerSec = s
+      })
+    } else {
+      // video or merge — always need the video stream
+      task.phase = 'downloading_video'
+      videoFile = await downloadFile(task.videoUrl, `${task.id}.mp4`, (b, t, s) => {
+        task.videoProgress = t > 0 ? b / t : 0; task.totalBytes = t; task.downloadedBytes = b; task.speedBytesPerSec = s
+      })
+
+      // For merge, also download audio
+      if (task.downloadType === 'merge') {
+        task.phase = 'downloading_audio'
+        audioFile = await downloadFile(task.audioUrl, `${task.id}.m4a`, (b, t, s) => {
+          task.audioProgress = t > 0 ? b / t : 0; task.totalBytes = t; task.downloadedBytes = b; task.speedBytesPerSec = s
+        })
+      }
+    }
 
     if (task.downloadType === 'merge') {
       task.phase = 'merging'
-      const merged = await mergeMedia(videoFile, audioFile, `${task.id}_merged.mp4`, task.duration, (p) => {
-        task.mergeProgress = p
-      })
-      // Save to Downloads/PiliPalaDown/
-      const outputName = sanitizeFilename(task.title) + '.mp4'
-      await saveToDownloads(merged, outputName)
-      // Cleanup temp files
-      await Filesystem.deleteFile({ path: videoFile, directory: Directory.Data })
-      await Filesystem.deleteFile({ path: audioFile, directory: Directory.Data })
-      await Filesystem.deleteFile({ path: merged, directory: Directory.Data })
+      let merged: string | null = null
+      try {
+        merged = await mergeQueue.add(async () => {
+          return mergeMedia(videoFile!, audioFile!, `${task.id}_merged.mp4`, task.duration, (p) => {
+            task.mergeProgress = p
+          })
+        }) as string
+      } catch (err) {
+        console.warn('[download] FFmpeg merge failed, falling back to video-only:', err)
+      }
+
+      if (merged) {
+        await saveToDownloads(merged, sanitizeFilename(task.title) + '.mp4')
+      } else {
+        // FFmpeg merge failed — save both video and audio separately
+        const safe = sanitizeFilename(task.title)
+        await saveToDownloads(videoFile!, safe + '_video.mp4')
+        await saveToDownloads(audioFile!, safe + '_audio.m4a')
+      }
+    } else if (task.downloadType === 'video') {
+      await saveToDownloads(videoFile!, sanitizeFilename(task.title) + '.mp4')
     } else {
-      // Audio-only or video-only
-      const ext = task.downloadType === 'audio' ? '.m4a' : '.mp4'
-      const srcFile = task.downloadType === 'audio' ? audioFile : videoFile
-      await saveToDownloads(srcFile, sanitizeFilename(task.title) + ext)
-      await Filesystem.deleteFile({ path: srcFile, directory: Directory.Data })
+      // audio-only
+      await saveToDownloads(audioFile!, sanitizeFilename(task.title) + '.m4a')
     }
 
     task.status = 'done'
@@ -70,94 +120,116 @@ async function processTask(task: DownloadTask) {
   } catch (err: any) {
     task.status = 'error'
     task.phase = ''
-    task.errorMessage = err.message
+    task.errorMessage = err?.message || String(err || '')
+    if (!task.errorMessage) task.errorMessage = '未知错误'
+    console.error('[download] processTask error:', err)
     await Storage.updateTaskStatus(task.id, 'error')
   }
 }
 
 async function downloadFile(url: string, filename: string, onProgress: (bytes: number, total: number, speed: number) => void): Promise<string> {
-  const resp = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36',
-      'Referer': 'https://www.bilibili.com',
-    },
-  })
-  const contentLength = resp.headers.get('content-length')
-  const total = contentLength ? parseInt(contentLength, 10) : 0
-  const reader = resp.body!.getReader()
-  const chunks: Uint8Array[] = []
-  let downloaded = 0
-  let lastTime = Date.now()
-  let lastBytes = 0
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-    downloaded += value.length
-    const now = Date.now()
-    const elapsed = (now - lastTime) / 1000
-    if (elapsed >= 0.1) {
-      const speed = lastBytes > 0 ? (downloaded - lastBytes) / elapsed : 0
-      lastTime = now; lastBytes = downloaded
-      onProgress(downloaded, total, speed)
-    }
+  if (!_sessdata) {
+    throw new Error('未登录，缺少 SESSDATA')
   }
 
-  // Write to app data directory
-  const blob = new Blob(chunks as BlobPart[])
-  const base64 = await blobToBase64(blob)
-  await Filesystem.writeFile({ path: `PiliPalaDown/${filename}`, data: base64, directory: Directory.Data })
-  onProgress(downloaded, total, 0)
-  return `PiliPalaDown/${filename}`
+  const filePath = `dl_${filename}`
+
+  // Try to get content-length for progress tracking via CapacitorHttp (bypasses CDN 403)
+  let totalBytes = 0
+  try {
+    const headResp = await CapacitorHttp.request({
+      url,
+      method: 'HEAD',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://www.bilibili.com',
+        'Cookie': `SESSDATA=${_sessdata}`,
+      },
+    })
+    const cl = headResp.headers?.['content-length'] || headResp.headers?.['Content-Length']
+    if (cl) totalBytes = parseInt(cl, 10)
+  } catch {}
+
+  // Start native download (fire-and-forget on native side)
+  const downloadPromise = NativeDownload.downloadFile({
+    url,
+    fileName: filePath,
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    referer: 'https://www.bilibili.com',
+    cookie: `SESSDATA=${_sessdata}`,
+  })
+
+  // Poll file size on disk for progress estimation
+  const pollTimer = setInterval(async () => {
+    try {
+      const stat = await Filesystem.stat({ path: filePath, directory: Directory.Data })
+      if (totalBytes > 0) {
+        const pct = Math.min(stat.size / totalBytes, 1)
+        onProgress(stat.size, totalBytes, 0)
+        if (stat.size >= totalBytes) return
+      }
+    } catch {
+      // File not yet created — still downloading
+      if (totalBytes > 0) onProgress(0, totalBytes, 0)
+    }
+  }, 800)
+
+  await downloadPromise
+  clearInterval(pollTimer)
+  onProgress(totalBytes || 1, totalBytes || 1, 0)
+  return filePath
 }
 
 async function mergeMedia(videoFile: string, audioFile: string, outputFile: string, _duration: number, onProgress: (p: number) => void): Promise<string> {
   const ffmpeg = new FFmpeg()
-  ffmpeg.on('progress', ({ progress }) => onProgress(progress))
+  ffmpeg.on('progress', ({ progress }) => { onProgress(progress * 100) })
 
   // Load FFmpeg WASM core
-  const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
+  console.log('[merge] loading ffmpeg WASM...')
   await ffmpeg.load({
-    coreURL: `${base}/ffmpeg-core.js`,
-    wasmURL: `${base}/ffmpeg-core.wasm`,
+    coreURL: '/ffmpeg/ffmpeg-core.js',
+    wasmURL: '/ffmpeg/ffmpeg-core.wasm',
   })
 
-  // Read input files into FFmpeg's virtual FS
+  // Read downloaded files
+  console.log('[merge] reading video file:', videoFile)
   const videoData = await Filesystem.readFile({ path: videoFile, directory: Directory.Data })
+  console.log('[merge] reading audio file:', audioFile)
   const audioData = await Filesystem.readFile({ path: audioFile, directory: Directory.Data })
 
+  // Feed into FFmpeg virtual FS
+  console.log('[merge] writing to ffmpeg FS...')
   await ffmpeg.writeFile('input_video.mp4', await fetchFile(`data:video/mp4;base64,${videoData.data}`))
   await ffmpeg.writeFile('input_audio.m4a', await fetchFile(`data:audio/mp4;base64,${audioData.data}`))
+
+  // Execute merge
+  console.log('[merge] executing ffmpeg...')
   await ffmpeg.exec(['-i', 'input_video.mp4', '-i', 'input_audio.m4a', '-c:v', 'copy', '-c:a', 'copy', '-strict', '-2', 'output.mp4'])
 
+  // Read result from FFmpeg virtual FS
+  console.log('[merge] reading output...')
   const data = await ffmpeg.readFile('output.mp4')
   const uint8 = data as Uint8Array
+  console.log('[merge] output size:', uint8.length, 'bytes')
+
+  // Convert to base64 (memory-hungry for large files)
   const base64 = arrayToBase64(uint8)
+  console.log('[merge] base64 size:', base64.length, 'chars')
+
+  // Write to app storage
+  console.log('[merge] writing result to:', outputFile)
   await Filesystem.writeFile({ path: outputFile, data: base64, directory: Directory.Data })
 
   ffmpeg.terminate()
+  console.log('[merge] done')
   onProgress(1)
   return outputFile
 }
 
-async function saveToDownloads(sourcePath: string, displayName: string): Promise<void> {
-  // Copy file from app data to Downloads/PiliPalaDown/
-  const result = await Filesystem.readFile({ path: sourcePath, directory: Directory.Data })
-
-  // Use MediaStore API for Android 10+ to save to Downloads
-  try {
-    await Filesystem.writeFile({
-      path: `PiliPalaDown/${displayName}`,
-      data: result.data,
-      directory: Directory.ExternalStorage,
-      // Note: On Android 11+, this requires MANAGE_EXTERNAL_STORAGE permission
-      // or uses MediaStore API via Capacitor plugin
-    })
-  } catch {
-    // Fallback: keep in app data directory with a note
-    console.warn('Could not save to Downloads, file stays in app data:', sourcePath)
-  }
+async function saveToDownloads(sourceFileName: string, displayName: string): Promise<void> {
+  // Use native plugin — copies directly on the Java side, no bridge overhead
+  await NativeDownload.saveToDownloads({ sourceFileName, displayName })
+  console.log('[download] saved to Downloads:', displayName)
 }
 
 // ===== Helpers =====
@@ -177,7 +249,10 @@ function blobToBase64(blob: Blob): Promise<string> {
 
 function arrayToBase64(u8: Uint8Array): string {
   let binary = ''
-  for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i])
+  const chunkSize = 8192
+  for (let i = 0; i < u8.length; i += chunkSize) {
+    binary += String.fromCharCode(...u8.subarray(i, i + chunkSize))
+  }
   return btoa(binary)
 }
 

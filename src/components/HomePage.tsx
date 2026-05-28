@@ -8,6 +8,7 @@ import { secondToTime } from '../api/bilibili'
 interface HomePageProps {
   onError: (message: string) => void
   onNavigateParse: (idType: string, value: string | number) => void
+  refreshKey?: number
 }
 
 interface PopularItem {
@@ -23,7 +24,7 @@ let _cache: PopularItem[] = []
 let _initialLoadStarted = false
 let _loadingInProgress = false
 
-export const HomePage: React.FC<HomePageProps> = ({ onError, onNavigateParse }) => {
+export const HomePage: React.FC<HomePageProps> = ({ onError, onNavigateParse, refreshKey = 0 }) => {
   const [popularList, setPopularList] = useState<PopularItem[]>(_cache)
   const [loading, setLoading] = useState(_cache.length === 0)
   const showFeed = useSettingsStore((s) => s.showDiscoverFeed)
@@ -31,11 +32,19 @@ export const HomePage: React.FC<HomePageProps> = ({ onError, onNavigateParse }) 
   const t = useT()
 
   useEffect(() => {
+    // Reset cache when refreshKey changes (e.g. after login)
+    if (refreshKey > 0) {
+      _cache = []
+      _initialLoadStarted = false
+      _loadingInProgress = false
+      setPopularList([])
+      setLoading(true)
+    }
     if (_cache.length > 0) return
     if (_initialLoadStarted || _loadingInProgress) return
     _initialLoadStarted = true
     loadPopularList()
-  }, [])
+  }, [refreshKey])
 
   async function loadPopularList() {
     if (_loadingInProgress) return undefined

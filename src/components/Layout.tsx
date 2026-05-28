@@ -37,6 +37,7 @@ export const Layout: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [parseTarget, setParseTarget] = useState<{ idType: string; value: string | number } | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const [loginRefreshKey, setLoginRefreshKey] = useState(0)
   const { isLoggedIn, checking, checkLogin } = useAuthStore()
   const workMode = useWorkStore((s) => s.mode)
   const hasParseResult = workMode === 'video' || workMode === 'season'
@@ -81,7 +82,7 @@ export const Layout: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage onError={handleError} onNavigateParse={handleNavigateParse} />
+        return <HomePage refreshKey={loginRefreshKey} onError={handleError} onNavigateParse={handleNavigateParse} />
       case 'parse':
         return (
           <ParsePage
@@ -97,6 +98,7 @@ export const Layout: React.FC = () => {
           <LoginPage
             onLoginSuccess={() => {
               setCurrentPage('home')
+              setLoginRefreshKey(k => k + 1)
               useAuthStore.getState().setLoggedIn(true)
             }}
           />
@@ -106,7 +108,7 @@ export const Layout: React.FC = () => {
       case 'error':
         return <ErrorPage message={errorMessage} onRetry={() => setCurrentPage('home')} />
       default:
-        return <HomePage onError={handleError} onNavigateParse={handleNavigateParse} />
+        return <HomePage refreshKey={loginRefreshKey} onError={handleError} onNavigateParse={handleNavigateParse} />
     }
   }
 

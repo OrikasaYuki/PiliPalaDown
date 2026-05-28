@@ -21,7 +21,7 @@
   },
   "task": {
     "title": "Downloads", "empty": "No download tasks", "waiting": "Waiting", "failed": "Failed",
-    "downloading_audio": "Downloading audio", "downloading_video": "Downloading video", "merging": "Merging",
+    "failed_with_msg": "Failed: {msg}", "downloading_audio": "Downloading audio", "downloading_video": "Downloading video", "merging": "Merging",
     "audio": "Audio", "video": "Video", "open_file": "Show in folder", "delete": "Delete", "download": "Download",
     "player_title_video": "Video Player", "player_title_audio": "Audio Player", "close_player": "Close"
   },

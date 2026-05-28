@@ -21,7 +21,7 @@
   },
   "task": {
     "title": "ダウンロード", "empty": "ダウンロードタスクはありません", "waiting": "待機中", "failed": "失敗",
-    "downloading_audio": "音声をダウンロード中", "downloading_video": "動画をダウンロード中", "merging": "マージ中",
+    "failed_with_msg": "失敗: {msg}", "downloading_audio": "音声をダウンロード中", "downloading_video": "動画をダウンロード中", "merging": "マージ中",
     "audio": "音声", "video": "動画", "open_file": "ファイルを開く", "delete": "削除", "download": "ダウンロード",
     "player_title_video": "動画再生", "player_title_audio": "音声再生", "close_player": "閉じる"
   },

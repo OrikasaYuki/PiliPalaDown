@@ -19,6 +19,7 @@
 [中文说明](README.zh.md)
 
 A cross-platform Bilibili video downloader built with Electron and TypeScript.
+Now available on **Android** (experimental)!
 
 ## Features
 
@@ -33,6 +34,12 @@ A cross-platform Bilibili video downloader built with Electron and TypeScript.
 - **Theme System** — Dark (default dark gray), Light, High Contrast (pure black)
 - **GPU Toggle** — Enable/disable GPU acceleration with crash auto-recovery
 - **System Tray** — Minimize-to-tray with context menu
+- **Android** — Native download engine, adaptive icon, portrait mode support
+
+### Android Known Limitations
+- High-quality video merging may fail due to WebView memory constraints — falls back to separate video & audio files
+- Download progress may not display when content-length is unavailable
+- File management features not available on Android
 
 ## Download
 

@@ -10,6 +10,7 @@ interface TaskPageProps {
 export const TaskPage: React.FC<TaskPageProps> = ({ onError }) => {
   const t = useT()
   const { tasks, loading, setLoading, setTasks, updateProgress, removeTask, refreshTasks, refreshActive } = useTaskStore()
+  const isAndroid = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform()
 
   useEffect(() => {
     loadTasks()
@@ -78,17 +79,20 @@ export const TaskPage: React.FC<TaskPageProps> = ({ onError }) => {
   }
 
   const formatProgress = (task: TaskItem) => {
-    if (task.statusState === 'waiting') return '等待下载'
-    if (task.statusState === 'error') return '下载失败'
-    if (task.statusState === 'done') return task.folder
+    if (task.statusState === 'waiting') return t('task.waiting')
+    if (task.statusState === 'error') return task.errorMessage ? t('task.failed_with_msg', { msg: task.errorMessage }) : t('task.failed')
+    if (task.statusState === 'done') {
+      const isAndroid = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform()
+      return isAndroid ? '保存到 Download/PiliPalaDown/' : task.folder
+    }
     const phase = task.phase || ''
-    if (phase === 'downloading_audio') return '下载音频中'
-    if (phase === 'downloading_video') return '下载视频中'
-    if (phase === 'merging') return '合并音视频中'
+    if (phase === 'downloading_audio') return t('task.downloading_audio')
+    if (phase === 'downloading_video') return t('task.downloading_video')
+    if (phase === 'merging') return t('task.merging')
     // Fallback to old logic
-    if (task.videoProgress === 0) return '下载音频中'
-    if (task.mergeProgress === 0) return '下载视频中'
-    return '合并音视频中'
+    if (task.videoProgress === 0) return t('task.downloading_audio')
+    if (task.mergeProgress === 0) return t('task.downloading_video')
+    return t('task.merging')
   }
 
   const getProgressWidth = (task: TaskItem) => {
@@ -171,13 +175,15 @@ export const TaskPage: React.FC<TaskPageProps> = ({ onError }) => {
             <div className="task-actions">
               {task.statusState === 'done' && (
                 <>
-                  <button
-                    className="btn btn-ghost btn-icon"
-                    title="打开文件位置"
-                    onClick={() => handleShowFile(task)}
-                  >
-                    <FolderOpen size={16} />
-                  </button>
+                  {!isAndroid && (
+                    <button
+                      className="btn btn-ghost btn-icon"
+                      title="打开文件位置"
+                      onClick={() => handleShowFile(task)}
+                    >
+                      <FolderOpen size={16} />
+                    </button>
+                  )}
                   <button
                     className="btn btn-ghost btn-icon"
                     title="删除"
@@ -188,13 +194,20 @@ export const TaskPage: React.FC<TaskPageProps> = ({ onError }) => {
                 </>
               )}
               {(task.statusState === 'error') && (
-                <button
-                  className="btn btn-ghost btn-icon"
-                  title="删除"
-                  onClick={() => handleDelete(task)}
-                >
-                  <Trash2 size={16} />
-                </button>
+                <>
+                  {task.errorMessage && (
+                    <span style={{ fontSize: 11, color: 'var(--color-error, #f87171)', marginRight: 8, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {task.errorMessage}
+                    </span>
+                  )}
+                  <button
+                    className="btn btn-ghost btn-icon"
+                    title="删除"
+                    onClick={() => handleDelete(task)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </>
               )}
             </div>
           </div>

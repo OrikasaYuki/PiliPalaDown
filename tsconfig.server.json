@@ -11,5 +11,5 @@
     "resolveJsonModule": true,
     "declaration": false
   },
-  "include": ["server"]
+  "include": ["server", "../shared"]
 }

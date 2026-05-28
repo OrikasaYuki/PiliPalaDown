@@ -20,6 +20,7 @@ interface ParsePageProps {
 
 export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarget }) => {
   const t = useT()
+  const isAndroid = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform()
   const {
     videoData, setVideoData, mode, setMode,
     btnLoading, setBtnLoading,
@@ -258,7 +259,7 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
           <VideoInfoCard />
           <VideoItemList
             onParseSelected={handleParseSelected}
-            onPlayEpisode={handlePlayEpisode}
+            onPlayEpisode={isAndroid ? undefined : handlePlayEpisode}
             sectionTabs={allSection}
             sectionActiveIndex={sectionActiveIndex}
             onSectionChange={setSectionActiveIndex}
@@ -282,21 +283,23 @@ export const ParsePage: React.FC<ParsePageProps> = ({ onError, onBack, parseTarg
         onDownload={handleDownload}
       />
 
-      <PlayerModal
-        open={playerOpen}
-        onClose={() => {
-          setPlayerOpen(false)
-          setPlayBvid('')
-          setPlayCid(0)
-        }}
-        src=""
-        title={playerTitle}
-        type="video"
-        isOnline
-        bvid={playBvid}
-        cid={playCid}
-        page={playPage}
-      />
+      {!isAndroid && (
+        <PlayerModal
+          open={playerOpen}
+          onClose={() => {
+            setPlayerOpen(false)
+            setPlayBvid('')
+            setPlayCid(0)
+          }}
+          src=""
+          title={playerTitle}
+          type="video"
+          isOnline
+          bvid={playBvid}
+          cid={playCid}
+          page={playPage}
+        />
+      )}
     </div>
   )
 }

@@ -11,7 +11,7 @@ export interface BiliResponse<T = any> {
 }
 
 export class BiliClient {
-  private sessdata: string
+  protected sessdata: string
 
   constructor(sessdata?: string) {
     this.sessdata = sessdata || ''
@@ -56,10 +56,13 @@ export class BiliClient {
   }
 
   private makeHeaders(): Record<string, string> {
-    return {
-      'Cookie': `SESSDATA=${this.sessdata}`,
+    const headers: Record<string, string> = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       'Referer': 'https://www.bilibili.com',
     }
+    if (this.sessdata) {
+      headers['Cookie'] = `SESSDATA=${this.sessdata}`
+    }
+    return headers
   }
 }

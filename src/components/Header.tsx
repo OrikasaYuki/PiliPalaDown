@@ -1,5 +1,5 @@
-import React from 'react'
-import { Download, List, Settings, FileSearch, User, Crown } from 'lucide-react'
+import React, { useState } from 'react'
+import { Download, List, Settings, FileSearch, User, Crown, Menu, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useT } from '../stores/localeStore'
 
@@ -14,6 +14,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onNavigateToParse, isLoggedIn, hasParseResult }) => {
   const t = useT()
   const user = useAuthStore((s) => s.user)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const navItems = [
     { page: 'home' as const, label: t('nav.home'), icon: Download, show: isLoggedIn },
@@ -23,6 +24,12 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onNavig
     { page: 'login' as const, label: t('nav.login'), icon: User, show: !isLoggedIn },
   ]
 
+  const handleNav = (page: string) => {
+    setMenuOpen(false)
+    if (page === 'parse' && onNavigateToParse) onNavigateToParse()
+    else onNavigate(page)
+  }
+
   return (
     <header className="app-header">
       <div className="header-inner">
@@ -31,15 +38,18 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onNavig
           <span className="brand-text">PiliPalaDown</span>
         </div>
 
+        {/* Hamburger toggle — visible on mobile */}
+        <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+
+        {/* Desktop nav */}
         <nav className="header-nav">
           {navItems.filter(item => item.show).map((item) => (
             <button
               key={item.page}
               className={`nav-btn ${currentPage === item.page ? 'active' : ''}`}
-              onClick={() => {
-                if (item.page === 'parse' && onNavigateToParse) onNavigateToParse()
-                else onNavigate(item.page)
-              }}
+              onClick={() => handleNav(item.page)}
             >
               <item.icon size={16} />
               <span>{item.label}</span>
@@ -56,6 +66,31 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onNavig
           )}
         </nav>
       </div>
+
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="mobile-nav-overlay" onClick={() => setMenuOpen(false)}>
+          <nav className="mobile-nav" onClick={e => e.stopPropagation()}>
+            {navItems.filter(item => item.show).map((item) => (
+              <button
+                key={item.page}
+                className={`mobile-nav-item ${currentPage === item.page ? 'active' : ''}`}
+                onClick={() => handleNav(item.page)}
+              >
+                <item.icon size={18} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+            {isLoggedIn && user && (
+              <div className="mobile-user-info">
+                <img src={user.face} className="user-avatar" alt="" referrerPolicy="no-referrer" />
+                <span className="user-name">{user.name}</span>
+                {user.isVip && <Crown size={14} className="user-vip" />}
+              </div>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   )
 }

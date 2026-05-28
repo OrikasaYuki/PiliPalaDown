@@ -4,40 +4,76 @@
  * - Capacitor plugins for filesystem, QR, dialogs
  * - Android-specific download + FFmpeg WASM
  */
+import { CapacitorHttp } from '@capacitor/core'
 import { Filesystem, Directory } from '@capacitor/filesystem'
-import { BiliClient } from '../../shared/bilibili/client'
 import * as biliVideo from '../../shared/bilibili/video'
 import * as biliAuth from '../../shared/bilibili/auth'
 import * as QRCode from 'qrcode'
 import * as Storage from './android/storage'
 import * as Download from './android/download'
+import OpenFile from './android/openfile'
+import NativeDownload from './android/nativedownload'
+import { AndroidBiliClient } from './android/bili-client'
 import type { ElectronAPI } from '../types'
 
 export async function createAndroidApi(): Promise<ElectronAPI> {
+  // Fix stuck tasks from previous session
+  await Storage.fixStuckTasks()
+
   // Restore saved SESSDATA
   const sd = await Storage.getSessdata()
-  const client = new BiliClient(sd || undefined)
+  const client = new AndroidBiliClient(sd || undefined)
+  // Shared modules expect BiliClient type — duck-typed cast
+  const c = client as any
+  // Sync SESSDATA to download manager (DASH URLs require auth)
+  if (sd) Download.setSessdata(sd)
 
   return {
     // ===== Auth =====
     async checkLogin() {
-      return biliAuth.checkLogin(client)
+      return biliAuth.checkLogin(c)
     },
 
     async getUserInfo() {
-      return biliAuth.getUserInfo(client)
+      return biliAuth.getUserInfo(c)
     },
 
     async getQRInfo() {
-      const info = await biliAuth.getQRInfo(client)
-      const image = await QRCode.toDataURL(info.url, { width: 280, margin: 1, color: { dark: '#000', light: '#fff' } })
-      return { image, key: info.qrcode_key }
+      try {
+        const info = await biliAuth.getQRInfo(c)
+        const image = await QRCode.toDataURL(info.url, { width: 280, margin: 1, color: { dark: '#000', light: '#fff' } })
+        return { image, key: info.qrcode_key }
+      } catch (err) {
+        console.error('[Android] getQRInfo failed:', err)
+        throw err
+      }
     },
 
     async getQRStatus(key: string) {
-      return biliAuth.pollQRLogin(client, key, async (sd) => {
-        await Storage.saveSessdata(sd)
-      })
+      // Use CapacitorHttp directly to bypass CORS (pollQRLogin uses fetch())
+      try {
+        const res = await client.getWithHeaders<any>('https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=' + key)
+        const data = res.data
+        if (data.code !== 0) return { success: false, message: data.message || 'API error' }
+        if (data.data.code === 0) {
+          const setCookie = res.headers['set-cookie'] || res.headers['Set-Cookie'] || ''
+          const match = setCookie.match(/SESSDATA=([^;]+)/)
+          if (match) {
+            client.setSessdata(match[1])
+            Download.setSessdata(match[1])
+            await Storage.saveSessdata(match[1])
+            return { success: true, message: '登录成功' }
+          }
+          return { success: false, message: '获取登录信息失败' }
+        }
+        const messages: Record<number, string> = {
+          [-1]: '二维码已过期', [-2]: '二维码已失效',
+          [-4]: '未扫码', [-5]: '已扫码，请点击确认',
+        }
+        return { success: false, message: messages[data.data.code] || `状态码: ${data.data.code}` }
+      } catch (err: any) {
+        return { success: false, message: err.message || '获取二维码状态失败' }
+      }
     },
 
     async logout() {
@@ -46,17 +82,22 @@ export async function createAndroidApi(): Promise<ElectronAPI> {
     },
 
     // ===== Bilibili =====
-    getVideoInfo: (bvid) => biliVideo.getVideoInfo(client, bvid),
-    getSeasonInfo: (epid, ssid) => biliVideo.getSeasonInfo(client, epid, ssid),
-    getPlayInfo: (bvid, cid) => biliVideo.getPlayInfo(client, bvid, cid),
-    getPopularVideos: () => biliVideo.getPopularVideos(client),
-    getFavList: (mediaId) => biliVideo.getFavList(client, mediaId),
+    getVideoInfo: (bvid) => biliVideo.getVideoInfo(c, bvid),
+    getSeasonInfo: (epid, ssid) => biliVideo.getSeasonInfo(c, epid, ssid),
+    getPlayInfo: (bvid, cid) => biliVideo.getPlayInfo(c, bvid, cid),
+    getPopularVideos: () => biliVideo.getPopularVideos(c),
+    getFavList: (mediaId) => biliVideo.getFavList(c, mediaId),
     getRedirectedLocation: async (url: string) => {
-      const res = await fetch(url, { method: 'HEAD', redirect: 'follow' })
-      return res.url
+      try {
+        const res = await CapacitorHttp.get({ url })
+        return res.url || url
+      } catch {
+        const res = await fetch(url, { method: 'HEAD', redirect: 'follow' })
+        return res.url
+      }
     },
     getSeasonsArchivesListFirstBvid: (mid, seasonId) =>
-      biliVideo.getSeasonsArchivesListFirstBvid(client, mid, seasonId),
+      biliVideo.getSeasonsArchivesListFirstBvid(c, mid, seasonId),
 
     // ===== Task =====
     createTask: async (tasks) => { await Download.createTasks(tasks) },
@@ -65,7 +106,14 @@ export async function createAndroidApi(): Promise<ElectronAPI> {
     })) as any),
     getTaskList: (page, pageSize) => Storage.getTaskList(page, pageSize),
     deleteTask: async (id) => { await Download.deleteTask(id) },
-    showFile: async () => { /* No file manager on Android from WebView */ },
+    showFile: async (path: string) => {
+      try {
+        const fileName = path.split(/[/\\]/).pop() || path
+        await OpenFile.openFile({ displayName: fileName })
+      } catch (err) {
+        console.warn('Could not open file:', err)
+      }
+    },
     getDownloadUrl: () => '',
 
     // ===== Settings =====
@@ -80,20 +128,33 @@ export async function createAndroidApi(): Promise<ElectronAPI> {
 
     // ===== App =====
     async quit() {
-      // Android — can't quit, just hide
+      try {
+        const { App } = await import('@capacitor/app')
+        await App.exitApp()
+      } catch { /* not available on older Capacitor */ }
     },
     async getAppVersion() {
       try {
-        const pkg = await Filesystem.readFile({ path: 'package.json', directory: Directory.Data })
-        return JSON.parse(pkg.data as string).version || '1.0.0'
+        const { App } = await import('@capacitor/app')
+        const info = await App.getInfo()
+        return info.version || '1.0.0'
       } catch { return '1.0.0' }
     },
 
-    log: async () => {},
+    log: async (msg: string) => {
+      const line = `[${new Date().toISOString()}] [Android] ${msg}`
+      console.log(line)
+      try {
+        const logs = JSON.parse(sessionStorage.getItem('pilipaladown-logs') || '[]')
+        logs.push(line)
+        if (logs.length > 200) logs.splice(0, logs.length - 200)
+        sessionStorage.setItem('pilipaladown-logs', JSON.stringify(logs))
+      } catch {}
+    },
 
     // ===== Online Playback =====
     async getPlayUrl(bvid: string, cid: number) {
-      const playInfo = await biliVideo.getPlayInfo(client, bvid, cid)
+      const playInfo = await biliVideo.getPlayInfo(c, bvid, cid)
       const labels: Record<number, string> = {
         6: '240P', 16: '360P', 32: '480P', 64: '720P',
         74: '720P60', 80: '1080P', 112: '1080P+', 116: '1080P60',
@@ -129,5 +190,17 @@ export async function createAndroidApi(): Promise<ElectronAPI> {
     getGpuStatus: async () => ({ enabled: false }),
     setGpuEnabled: async () => ({ success: true, needsRestart: false }),
     relaunch: async () => {},
+
+    // ===== Cache =====
+    getCacheSize: async () => {
+      try {
+        return await NativeDownload.getCacheSize()
+      } catch { return { size: 0 } }
+    },
+    clearCache: async () => {
+      try {
+        return await NativeDownload.clearCache()
+      } catch { return { deleted: 0 } }
+    },
   }
 }

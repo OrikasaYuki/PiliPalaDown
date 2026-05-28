@@ -11,7 +11,10 @@ import { BiliClient } from './bilibili/client'
 import * as biliVideo from './bilibili/video'
 import * as biliAuth from './bilibili/auth'
 import { createTasks, getActiveTasks, deleteTask as deleteManagedTask, checkFFmpeg } from './task/manager'
-import { getFields, saveFields as dbSaveFields, getTaskList, getCurrentFolder, getSessdata } from './util/db'
+import { getFields, saveFields as dbSaveFields, getTaskList, getCurrentFolder, getSessdata, fixStuckTasks } from './util/db'
+
+// Fix stuck tasks from previous session (crash during download)
+fixStuckTasks()
 
 const app = express()
 const PORT = 8098

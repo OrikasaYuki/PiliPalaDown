@@ -13,6 +13,7 @@ export interface TaskItem extends TaskInDB {
   totalBytes: number
   downloadedBytes: number
   speedBytesPerSec: number
+  errorMessage?: string
 }
 
 interface TaskState {
@@ -63,6 +64,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           totalBytes: active.totalBytes || t.totalBytes,
           downloadedBytes: active.downloadedBytes || t.downloadedBytes,
           speedBytesPerSec: active.speedBytesPerSec || t.speedBytesPerSec,
+          errorMessage: active.errorMessage || t.errorMessage,
         }
       }
       return t

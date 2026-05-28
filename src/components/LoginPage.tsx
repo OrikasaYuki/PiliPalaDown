@@ -25,7 +25,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       qrKeyRef.current = qrInfo.key
       setErrorMessage('')
     } catch (err: any) {
-      setErrorMessage('加载二维码失败，请刷新页面重试')
+      console.error('[LoginPage] getQRInfo error:', err)
+      setErrorMessage(`加载二维码失败: ${err?.message || err || '未知错误'}`)
     } finally {
       setQrLoading(false)
     }

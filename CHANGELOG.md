@@ -2,6 +2,25 @@
 
 [中文版本](CHANGELOG.zh.md)
 
+## [1.2.0] — 2026-05-29
+
+### Added
+- Android native download engine (bypasses WebView OOM, supports large files)
+- Android adaptive icon branded with project logo
+- Download cache viewer & cleaner in settings
+- Download path hint on completion
+- Portrait mode hamburger menu navigation
+
+### Fixed
+- Download retries now mark stuck tasks as failed on app restart (Android + Electron)
+- Download error messages now shown with full detail
+- i18n for download status text
+
+### Android Limitations
+- Audio/video merging may fail on high-quality videos (1080P60+) due to WebView memory constraints — falls back to separate video+audio files
+- Download progress may not show for files where server does not provide content-length
+- File management features (open file location) not available
+
 ## [1.1.1] — 2026-05-27
 
 ### Fixed

@@ -10,7 +10,7 @@ import { BiliClient } from '../server/bilibili/client'
 import * as biliVideo from '../server/bilibili/video'
 import * as biliAuth from '../server/bilibili/auth'
 import { createTasks, getActiveTasks, deleteTask as deleteManagedTask, checkFFmpeg } from '../server/task/manager'
-import { getFields, saveFields as dbSaveFields, getTaskList, getSessdata } from '../server/util/db'
+import { getFields, saveFields as dbSaveFields, getTaskList, getSessdata, fixStuckTasks } from '../server/util/db'
 import { log as fileLog } from '../server/util/logger'
 
 let mainWindow: BrowserWindow | null = null
@@ -366,6 +366,9 @@ app.on('second-instance', () => {
 
 // Check ffmpeg on startup
 app.whenReady().then(() => {
+  // Fix stuck tasks from previous session
+  fixStuckTasks()
+
   if (!checkFFmpeg()) {
     dialog.showErrorBox('FFmpeg 未安装',
       '请安装 FFmpeg 并将其添加到系统 PATH 中。\n\n下载地址：https://ffmpeg.org/download.html')

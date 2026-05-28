@@ -3,6 +3,53 @@
  * Each platform provides its own implementation.
  */
 
+// ===== Shared Download Types (Single Source of Truth) =====
+
+export type TaskStatus = 'done' | 'waiting' | 'running' | 'error'
+
+export interface TaskInitData {
+  bvid: string
+  cid: number
+  format: number
+  title: string
+  owner: string
+  cover: string
+  audio: string
+  video: string
+  width: number
+  height: number
+  duration: number
+  downloadType: 'audio' | 'video' | 'merge'
+}
+
+export interface TaskInDB extends TaskInitData {
+  id: number
+  folder: string
+  createAt: string
+  status: TaskStatus
+}
+
+export interface ActiveTask {
+  id: number
+  bvid: string
+  cid: number
+  format: number
+  title: string
+  owner: string
+  cover: string
+  status: TaskStatus
+  folder: string
+  audioProgress: number
+  videoProgress: number
+  mergeProgress: number
+  duration: number
+  phase: 'downloading_audio' | 'downloading_video' | 'merging' | 'done' | ''
+  totalBytes: number
+  downloadedBytes: number
+  speedBytesPerSec: number
+  errorMessage?: string
+}
+
 export interface DownloadTask {
   id: number
   bvid: string
@@ -17,7 +64,7 @@ export interface DownloadTask {
   height: number
   duration: number
   downloadType: 'audio' | 'video' | 'merge'
-  status: 'waiting' | 'running' | 'done' | 'error'
+  status: TaskStatus
   folder: string
   audioProgress: number
   videoProgress: number

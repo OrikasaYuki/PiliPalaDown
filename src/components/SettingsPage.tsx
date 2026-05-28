@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Save, LogOut, Power, Loader2, Folder, FileText, Sun, Moon, Globe, Monitor } from 'lucide-react'
+import { Save, LogOut, Power, Loader2, Folder, FileText, Sun, Moon, Globe, Monitor, Trash2, HardDrive } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useT, useLocaleStore, Locale } from '../stores/localeStore'
 import { useThemeStore } from '../stores/themeStore'
@@ -30,9 +30,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onError }) => {
   const setShowDiscoverFeed = useSettingsStore((s) => s.setShowDiscoverFeed)
   const [gpuEnabled, setGpuEnabled] = useState(false)
   const [gpuLoading, setGpuLoading] = useState(false)
+  const [cacheSize, setCacheSize] = useState(0)
+  const [cacheLoading, setCacheLoading] = useState(false)
+  const [clearingCache, setClearingCache] = useState(false)
+  const isAndroid = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform()
 
   useEffect(() => {
-    window.electronAPI.getGpuStatus().then((r: { enabled: boolean }) => setGpuEnabled(r.enabled)).catch(() => {})
+    if (!isAndroid) {
+      window.electronAPI.getGpuStatus().then((r: { enabled: boolean }) => setGpuEnabled(r.enabled)).catch(() => {})
+    }
   }, [])
 
   const handleToggleGpu = async (enable: boolean) => {
@@ -55,6 +61,35 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onError }) => {
   useEffect(() => {
     loadSettings()
   }, [])
+
+  useEffect(() => {
+    if (window.electronAPI.getCacheSize) {
+      setCacheLoading(true)
+      window.electronAPI.getCacheSize().then((r: { size: number }) => { setCacheSize(r.size); setCacheLoading(false) }).catch(() => setCacheLoading(false))
+    }
+  }, [])
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B'
+    const units = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i]
+  }
+
+  const handleClearCache = async () => {
+    if (!confirm('确定要清除下载缓存吗？')) return
+    setClearingCache(true)
+    try {
+      const r = await window.electronAPI.clearCache!()
+      setCacheSize(0)
+      setMessage(`已清除 ${formatBytes(r.deleted)}`)
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err: any) {
+      onError(err.message)
+    } finally {
+      setClearingCache(false)
+    }
+  }
 
   const handleSave = async () => {
     try {
@@ -89,31 +124,33 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onError }) => {
 
   return (
     <div className="settings-page">
-      <div className="settings-card">
-        <h3>{t('settings.download_folder')}</h3>
-        <div className="settings-field">
-          <label className="field-label">{t('settings.download_folder')}</label>
-          <div className="field-input-group">
-            <Folder size={18} className="field-icon" />
-            <input
-              type="text"
-              className="field-input"
-              value={downloadFolder}
-              onChange={e => setDownloadFolder(e.target.value)}
-              placeholder={t('settings.download_folder')}
-            />
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-              <span>{t('settings.save')}</span>
-            </button>
+      {!isAndroid && (
+        <div className="settings-card">
+          <h3>{t('settings.download_folder')}</h3>
+          <div className="settings-field">
+            <label className="field-label">{t('settings.download_folder')}</label>
+            <div className="field-input-group">
+              <Folder size={18} className="field-icon" />
+              <input
+                type="text"
+                className="field-input"
+                value={downloadFolder}
+                onChange={e => setDownloadFolder(e.target.value)}
+                placeholder={t('settings.download_folder')}
+              />
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+                <span>{t('settings.save')}</span>
+              </button>
+            </div>
+            {message && <p className="field-success">{message}</p>}
           </div>
-          {message && <p className="field-success">{message}</p>}
         </div>
-      </div>
+      )}
 
       <div className="settings-card">
         <h3>{t('settings.theme')}</h3>
@@ -204,32 +241,57 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onError }) => {
       </div>
 
       <div className="settings-card">
-        <h3>GPU 加速</h3>
+        <h3>下载缓存</h3>
         <div className="settings-field">
           <div className="settings-actions">
+            <HardDrive size={16} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              {cacheLoading ? '计算中...' : formatBytes(cacheSize)}
+            </span>
             <button
-              className={`btn ${!gpuEnabled ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-              onClick={() => handleToggleGpu(false)}
-              disabled={gpuLoading}
+              className="btn btn-ghost btn-sm danger"
+              onClick={handleClearCache}
+              disabled={cacheSize === 0 || clearingCache}
             >
-              <Monitor size={14} />
-              <span>禁用</span>
-            </button>
-            <button
-              className={`btn ${gpuEnabled ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-              onClick={() => handleToggleGpu(true)}
-              disabled={gpuLoading}
-            >
-              <Monitor size={14} />
-              <span>启用</span>
+              {clearingCache ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+              <span>清除缓存</span>
             </button>
           </div>
-          {gpuLoading && <div className="loading-state" style={{ padding: 8 }}><Loader2 size={14} className="spin" /></div>}
           <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
-            {gpuEnabled ? 'GPU加速已启用' : 'GPU加速已禁用（默认）'}
+            临时下载文件（下载完成后不会自动清理）
           </p>
         </div>
       </div>
+
+      {!isAndroid && (
+        <div className="settings-card">
+          <h3>GPU 加速</h3>
+          <div className="settings-field">
+            <div className="settings-actions">
+              <button
+                className={`btn ${!gpuEnabled ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+                onClick={() => handleToggleGpu(false)}
+                disabled={gpuLoading}
+              >
+                <Monitor size={14} />
+                <span>禁用</span>
+              </button>
+              <button
+                className={`btn ${gpuEnabled ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+                onClick={() => handleToggleGpu(true)}
+                disabled={gpuLoading}
+              >
+                <Monitor size={14} />
+                <span>启用</span>
+              </button>
+            </div>
+            {gpuLoading && <div className="loading-state" style={{ padding: 8 }}><Loader2 size={14} className="spin" /></div>}
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+              {gpuEnabled ? 'GPU加速已启用' : 'GPU加速已禁用（默认）'}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="settings-card">
         <h3>{t('settings.app')}</h3>
@@ -245,20 +307,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onError }) => {
         </div>
       </div>
 
-      <div className="settings-card">
-        <h3>{t('settings.debug')}</h3>
-        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 12 }}>
-          {t('settings.log_path', { path: '~/.pilipaladown/app.log' })}
-        </p>
-        <div className="settings-actions">
-          <button className="btn btn-ghost btn-sm" onClick={() => {
-            alert('路径: %USERPROFILE%\\.pilipaladown\\app.log')
-          }}>
-            <FileText size={14} />
-            <span>{t('settings.view_log')}</span>
-          </button>
+      {!isAndroid && (
+        <div className="settings-card">
+          <h3>{t('settings.debug')}</h3>
+          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 12 }}>
+            {t('settings.log_path', { path: '~/.pilipaladown/app.log' })}
+          </p>
+          <div className="settings-actions">
+            <button className="btn btn-ghost btn-sm" onClick={() => {
+              alert('路径: %USERPROFILE%\\.pilipaladown\\app.log')
+            }}>
+              <FileText size={14} />
+              <span>{t('settings.view_log')}</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

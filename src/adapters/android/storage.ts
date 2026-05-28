@@ -106,6 +106,27 @@ export async function deleteTaskRecord(id: number): Promise<void> {
   await withStore('tasks', 'readwrite', (store) => store.delete(id))
 }
 
+/** Mark in-progress tasks as failed (e.g. after app restart) */
+export async function fixStuckTasks(): Promise<void> {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('tasks', 'readwrite')
+    const store = tx.objectStore('tasks')
+    const req = store.getAll()
+    req.onsuccess = () => {
+      const all = req.result || []
+      for (const record of all) {
+        if (record.status === 'running' || record.status === 'waiting') {
+          record.status = 'error'
+          store.put(record)
+        }
+      }
+    }
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error) }
+  })
+}
+
 export async function getTaskList(page: number, pageSize: number): Promise<any[]> {
   const db = await openDB()
   return new Promise((resolve, reject) => {

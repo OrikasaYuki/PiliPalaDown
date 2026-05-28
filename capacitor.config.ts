@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'PiliPalaDown',
   webDir: 'dist-web',
   server: {
-    androidScheme: 'https',
+    androidScheme: 'http',
     cleartext: true,
   },
   plugins: {

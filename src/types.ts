@@ -113,51 +113,10 @@ export interface StaffItem {
   face: string
 }
 
-// ===== Task Types =====
+// ===== Task Types (re-exported from shared/) =====
 
-export interface TaskInitData {
-  bvid: string
-  cid: number
-  format: VideoFormat
-  title: string
-  owner: string
-  cover: string
-  audio: string
-  video: string
-  width: number
-  height: number
-  duration: number
-  downloadType: 'audio' | 'video' | 'merge'
-}
-
-export interface TaskInDB extends TaskInitData {
-  id: number
-  folder: string
-  createAt: string
-  status: TaskStatus
-}
-
-export type TaskStatus = 'done' | 'waiting' | 'running' | 'error'
-
-export interface ActiveTask {
-  id: number
-  bvid: string
-  cid: number
-  format: VideoFormat
-  title: string
-  owner: string
-  cover: string
-  status: TaskStatus
-  folder: string
-  audioProgress: number
-  videoProgress: number
-  mergeProgress: number
-  duration: number
-  phase: 'downloading_audio' | 'downloading_video' | 'merging' | 'done' | ''
-  totalBytes: number
-  downloadedBytes: number
-  speedBytesPerSec: number
-}
+import type { TaskInitData, TaskInDB, ActiveTask, TaskStatus } from '../shared/download/types'
+export type { TaskInitData, TaskInDB, ActiveTask, TaskStatus }
 
 // ===== Parse Result =====
 
@@ -269,4 +228,8 @@ export interface ElectronAPI {
   relaunch(): Promise<void>
   quit(): Promise<void>
   getAppVersion(): Promise<string>
+
+  // Cache
+  getCacheSize?(): Promise<{ size: number }>
+  clearCache?(): Promise<{ deleted: number }>
 }

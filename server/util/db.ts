@@ -141,6 +141,19 @@ export function getTaskById(id: number): TaskRecord | undefined {
 
 // ===== Auth =====
 
+/** Mark in-progress tasks as failed (e.g. after app restart) */
+export function fixStuckTasks(): void {
+  const s = loadStore()
+  let changed = false
+  for (const task of s.tasks) {
+    if (task.status === 'running' || task.status === 'waiting') {
+      task.status = 'error'
+      changed = true
+    }
+  }
+  if (changed) saveStore()
+}
+
 export function getSessdata(): string | null {
   const s = loadStore()
   return s.fields.sessdata || null
